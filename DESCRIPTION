@@ -1,0 +1,14 @@
+Package: sepcor
+Type: Package
+Title: Covariance matrices with separable correlation
+Version: 0.1.0
+Author: Karl Oskar Ekvall
+Maintainer: Karl Oskar Ekvall <k.o.ekvall@gmail.com>
+Description: Package for estimating covariance matrices with separable correlation, using the multivariate normal likelihood.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: Rcpp, RcppArmadillo
+LinkingTo: Rcpp, RcppArmadillo
+RoxygenNote: 6.0.1
+Suggests: testthat, numDeriv
