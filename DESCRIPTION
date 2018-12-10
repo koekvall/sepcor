@@ -10,5 +10,5 @@ Encoding: UTF-8
 LazyData: true
 Imports: Rcpp, RcppArmadillo
 LinkingTo: Rcpp, RcppArmadillo
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1
 Suggests: testthat, numDeriv
