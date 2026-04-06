@@ -2,5 +2,7 @@
 
 export(prof_log_lik)
 export(sepcor)
+export(sepcor_se)
 importFrom(Rcpp,evalCpp)
+importFrom(stats,rWishart)
 useDynLib(sepcor)

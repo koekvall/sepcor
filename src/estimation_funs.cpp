@@ -4,7 +4,8 @@
 
 //[[Rcpp::export]]
 Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
- const double tol, const int maxiter, const bool verbose)
+ const double tol, const int maxiter, const bool verbose,
+ const double lambda)
 {
 	// \Sigma = W (U \otimes V) W
 	const unsigned int n_obs = E.n_cols;
@@ -39,6 +40,7 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			U += E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t() * 
 			chol_solve(V_c, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1));
 		}
+		U += 0.5 * lambda * arma::eye(n_cols, n_cols);
 		U *= (1.0 / (n_obs * n_rows));
 		// Rescale U to corr-mat and W accordingly
 		U_c.col(0) = 1.0 / arma::sqrt(U.diag()); // Store precision param. updates
@@ -62,6 +64,7 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			V += E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1) *
 				chol_solve(U_c, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t());
 		}
+		V += 0.5 * lambda * arma::eye(n_rows, n_rows);
 		V *= (1.0 / (n_obs * n_cols));
 		// Rescale V to corr-mat and W accordingly
 		V_c.col(0) = 1.0 / arma::sqrt(V.diag()); // Store precision param. updates

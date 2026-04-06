@@ -5,8 +5,16 @@
 \title{Estimate the covariance matrix Sigma = W k(U, V) W using the multivariate
 normal likelihood, where k(U, V) means the Kronecker product of U and V.}
 \usage{
-sepcor(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
-  verbose = FALSE)
+sepcor(
+  E,
+  n_rows,
+  sepcov = FALSE,
+  tol = 1e-16,
+  maxiter = 1000,
+  verbose = FALSE,
+  lambda = 0,
+  n_starts = 1L
+)
 }
 \arguments{
 \item{E}{Matrix of dimension (n_rows n_cols) x n_obs, each column is a residual vector}
@@ -20,6 +28,14 @@ sepcor(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
 \item{maxiter}{The maximum number of iterations the algorithm runs if not converging before}
 
 \item{verbose}{Print additional info about iterates if TRUE}
+
+\item{lambda}{Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(U^{-1}) + tr(V^{-1})]
+to the negative log-likelihood, shrinking U and V toward the identity (independence).
+Only used when sepcov = FALSE. Default 0 gives the MLE.}
+
+\item{n_starts}{Number of random starting points. The first start uses the default
+initialization (U = I, V = I). Additional starts use random correlation matrices
+and perturbed standard deviations. Only used when sepcov = FALSE. Default 1.}
 }
 \value{
 Final iterates, log-likelihood evaluated at these iterates, iterations,

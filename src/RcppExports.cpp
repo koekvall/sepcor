@@ -6,9 +6,14 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // sepcor_rcpp
-Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows, const double tol, const int maxiter, const bool verbose);
-RcppExport SEXP _sepcor_sepcor_rcpp(SEXP ESEXP, SEXP WSEXP, SEXP n_rowsSEXP, SEXP tolSEXP, SEXP maxiterSEXP, SEXP verboseSEXP) {
+Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows, const double tol, const int maxiter, const bool verbose, const double lambda);
+RcppExport SEXP _sepcor_sepcor_rcpp(SEXP ESEXP, SEXP WSEXP, SEXP n_rowsSEXP, SEXP tolSEXP, SEXP maxiterSEXP, SEXP verboseSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,7 +23,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< const int >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(sepcor_rcpp(E, W, n_rows, tol, maxiter, verbose));
+    Rcpp::traits::input_parameter< const double >::type lambda(lambdaSEXP);
+    rcpp_result_gen = Rcpp::wrap(sepcor_rcpp(E, W, n_rows, tol, maxiter, verbose, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -78,7 +84,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sepcor_sepcor_rcpp", (DL_FUNC) &_sepcor_sepcor_rcpp, 6},
+    {"_sepcor_sepcor_rcpp", (DL_FUNC) &_sepcor_sepcor_rcpp, 7},
     {"_sepcor_sepcov_rcpp", (DL_FUNC) &_sepcor_sepcov_rcpp, 5},
     {"_sepcor_prof_log_lik_rcpp", (DL_FUNC) &_sepcor_prof_log_lik_rcpp, 2},
     {"_sepcor_ll_grad_UV", (DL_FUNC) &_sepcor_ll_grad_UV, 3},
