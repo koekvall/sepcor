@@ -1,5 +1,5 @@
-#' Estimate the covariance matrix Sigma = W k(U, V) W using the multivariate
-#' normal likelihood, where k(U, V) means the Kronecker product of U and V.
+#' Estimate the covariance matrix Sigma = D (C2 \%x\% C1) D using the multivariate
+#' normal likelihood, where \%x\% denotes the Kronecker product.
 #'
 #' @param E Matrix of dimension (n_rows n_cols) x n_obs, each column is a residual vector
 #' @param n_rows Number of "rows" of the inverse vectorized columns of E
@@ -7,11 +7,11 @@
 #' @param tol Algorithm terminates when an iteration increases the log-likelihood less than tol
 #' @param maxiter The maximum number of iterations the algorithm runs if not converging before
 #' @param verbose Print additional info about iterates if TRUE
-#' @param lambda Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(U^{-1}) + tr(V^{-1})]
-#'   to the negative log-likelihood, shrinking U and V toward the identity (independence).
+#' @param lambda Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(C1^{-1}) + tr(C2^{-1})]
+#'   to the negative log-likelihood, shrinking C1 and C2 toward the identity (independence).
 #'   Only used when sepcov = FALSE. Default 0 gives the MLE.
 #' @param n_starts Number of random starting points. The first start uses the default
-#'   initialization (U = I, V = I). Additional starts use random correlation matrices
+#'   initialization (C1 = I, C2 = I). Additional starts use random correlation matrices
 #'   and perturbed standard deviations. Only used when sepcov = FALSE. Default 1.
 #' @return Final iterates, log-likelihood evaluated at these iterates, iterations,
 #' and convergence info
@@ -78,9 +78,9 @@ sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
 #' @param E Matrix of dimension (n_rows * n_cols) x n_obs of residual vectors.
 #' @param n_rows Number of rows of the inverse vectorized columns of E.
 #' @return A list with components:
-#'   \item{se_U}{Standard errors for the upper-triangular entries of U.}
-#'   \item{se_V}{Standard errors for the upper-triangular entries of V.}
-#'   \item{se_logW}{Standard errors for log(W) (the log standard deviations).}
+#'   \item{se_C2}{Standard errors for the upper-triangular entries of C2.}
+#'   \item{se_C1}{Standard errors for the upper-triangular entries of C1.}
+#'   \item{se_logD}{Standard errors for log(D) (the log standard deviations).}
 #'   \item{vcov}{The full asymptotic covariance matrix of all parameters.}
 #'
 #' @export
@@ -91,8 +91,8 @@ sepcor_se <- function(fit, E, n_rows)
   nc    <- nrow(E) / nr
   q     <- nr * nc
 
-  C2  <- fit$U   # nc x nc correlation matrix (C_2 in the paper)
-  C1  <- fit$V   # nr x nr correlation matrix (C_1 in the paper)
+  C2  <- fit$C2
+  C1  <- fit$C1
   C2i <- solve(C2)
   C1i <- solve(C1)
 
@@ -133,7 +133,7 @@ sepcor_se <- function(fit, E, n_rows)
   # Block (log D, log D): I[k,l] = n*(delta[k,l] + (C2*C2i)[k2,l2]*(C1*C1i)[k1,l1])
   I_DD <- n_obs * (diag(q) + kronecker(C2 * C2i, C1 * C1i))
 
-  # Assemble full information matrix in parameter order [U upper tri, V upper tri, log W]
+  # Assemble full information matrix in parameter order [C2 upper tri, C1 upper tri, log D]
   I_full <- rbind(
     cbind(I_UU,    I_UV,    I_UD),
     cbind(t(I_UV), I_VV,    I_VD),
@@ -148,9 +148,9 @@ sepcor_se <- function(fit, E, n_rows)
   se <- sqrt(pmax(diag(vcov), 0))
 
   list(
-    se_U    = se[seq_len(n_U)],
-    se_V    = se[n_U + seq_len(n_V)],
-    se_logW = se[n_U + n_V + seq_len(q)],
+    se_C2   = se[seq_len(n_U)],
+    se_C1   = se[n_U + seq_len(n_V)],
+    se_logD = se[n_U + n_V + seq_len(q)],
     vcov    = vcov
   )
 }

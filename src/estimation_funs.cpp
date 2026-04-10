@@ -115,8 +115,8 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			Rcpp::Rcout << "V: " << V << std::endl;
 		}
 	}
-	return Rcpp::List::create(Rcpp::Named("U") = U, Rcpp::Named("V") = V,
-		Rcpp::Named("W") = arma::pow(W, -1.0), Rcpp::Named("ll") = 
+	return Rcpp::List::create(Rcpp::Named("C2") = U, Rcpp::Named("C1") = V,
+		Rcpp::Named("D") = arma::pow(W, -1.0), Rcpp::Named("ll") =
 			ll_old, Rcpp::Named("iter") = iter, Rcpp::Named("info") = info);
 }
 
@@ -206,7 +206,7 @@ Rcpp::List sepcov_rcpp(arma::mat E, const int n_rows,
 			Rcpp::Rcout << "V: " << V << std::endl;
 		}
 	}
-	return Rcpp::List::create(Rcpp::Named("U") = U, Rcpp::Named("V") = V,
+	return Rcpp::List::create(Rcpp::Named("C2") = U, Rcpp::Named("C1") = V,
 		Rcpp::Named("ll") = ll_old, Rcpp::Named("iter") = iter,
 		Rcpp::Named("info") = info);
 }
