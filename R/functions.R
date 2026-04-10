@@ -72,86 +72,86 @@ sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
 }
 
 #' Compute standard errors for a fitted separable correlation model via
-#' the observed Fisher information (numerical Hessian of the log-likelihood).
+#' the expected Fisher information.
 #'
 #' @param fit A list returned by \code{sepcor} (with sepcov = FALSE).
 #' @param E Matrix of dimension (n_rows * n_cols) x n_obs of residual vectors.
 #' @param n_rows Number of rows of the inverse vectorized columns of E.
 #' @return A list with components:
-#'   \item{se_U}{Standard errors for the upper-triangular entries of U (row-major).}
-#'   \item{se_V}{Standard errors for the upper-triangular entries of V (row-major).}
-#'   \item{se_W}{Standard errors for the diagonal entries of W (on the log scale).}
+#'   \item{se_U}{Standard errors for the upper-triangular entries of U.}
+#'   \item{se_V}{Standard errors for the upper-triangular entries of V.}
+#'   \item{se_logW}{Standard errors for log(W) (the log standard deviations).}
 #'   \item{vcov}{The full asymptotic covariance matrix of all parameters.}
 #'
 #' @export
 sepcor_se <- function(fit, E, n_rows)
 {
-  if(!requireNamespace("numDeriv", quietly = TRUE)){
-    stop("Package 'numDeriv' is needed for standard error computation.")
-  }
   n_obs <- ncol(E)
-  n_cols <- nrow(E) / n_rows
+  nr    <- n_rows
+  nc    <- nrow(E) / nr
+  q     <- nr * nc
 
-  U <- fit$U
-  V <- fit$V
-  W_vec <- as.vector(fit$W) # standard deviations
+  C2  <- fit$U   # nc x nc correlation matrix (C_2 in the paper)
+  C1  <- fit$V   # nr x nr correlation matrix (C_1 in the paper)
+  C2i <- solve(C2)
+  C1i <- solve(C1)
 
-  # Indices for free parameters: upper triangle of U, upper triangle of V, log(W)
-  U_ut <- which(upper.tri(U), arr.ind = TRUE)
-  V_ut <- which(upper.tri(V), arr.ind = TRUE)
-  n_U <- nrow(U_ut)
-  n_V <- nrow(V_ut)
-  q <- n_rows * n_cols
+  # Upper-triangle indices for C2 and C1, matching upper.tri() column-major order
+  U_ut <- which(upper.tri(C2), arr.ind = TRUE)   # n_U x 2
+  V_ut <- which(upper.tri(C1), arr.ind = TRUE)   # n_V x 2
+  n_U  <- nrow(U_ut)
+  n_V  <- nrow(V_ut)
 
-  # Pack MLE parameters into a single vector
-  theta_hat <- c(
-    U[upper.tri(U)],      # upper-triangular of U (off-diagonal correlations)
-    V[upper.tri(V)],      # upper-triangular of V
-    log(W_vec)            # log standard deviations
+  aU <- U_ut[, 1L]; bU <- U_ut[, 2L]   # row/col indices for C2 upper tri
+  aV <- V_ut[, 1L]; bV <- V_ut[, 2L]   # row/col indices for C1 upper tri
+
+  C2i_ut <- C2i[U_ut]   # C2i entries at upper-tri positions
+  C1i_ut <- C1i[V_ut]
+
+  # For each diagonal element of D (index m, 1-indexed, column-major):
+  #   m1 = row index in C1, m2 = column index in C2
+  m1 <- ((seq_len(q) - 1L) %% nr) + 1L
+  m2 <- ((seq_len(q) - 1L) %/% nr) + 1L
+
+  # Block (C2, C2): I[j,k] = n*nr*(C2i[aj,ak]*C2i[bj,bk] + C2i[aj,bk]*C2i[bj,ak])
+  I_UU <- n_obs * nr * (C2i[aU, aU] * C2i[bU, bU] +
+                         C2i[aU, bU] * C2i[bU, aU])
+
+  # Block (C1, C1): I[j,k] = n*nc*(C1i[aj,ak]*C1i[bj,bk] + C1i[aj,bk]*C1i[bj,ak])
+  I_VV <- n_obs * nc * (C1i[aV, aV] * C1i[bV, bV] +
+                         C1i[aV, bV] * C1i[bV, aV])
+
+  # Block (C2, C1): I[j,k] = 2*n*C2i[aj,bj]*C1i[ak,bk]
+  I_UV <- 2 * n_obs * outer(C2i_ut, C1i_ut)
+
+  # Block (C2, log D): I[j,m] = n*C2i[aj,bj] * (1[m2==aj] + 1[m2==bj])
+  I_UD <- n_obs * C2i_ut * (outer(aU, m2, "==") + outer(bU, m2, "=="))
+
+  # Block (C1, log D): I[j,m] = n*C1i[aj,bj] * (1[m1==aj] + 1[m1==bj])
+  I_VD <- n_obs * C1i_ut * (outer(aV, m1, "==") + outer(bV, m1, "=="))
+
+  # Block (log D, log D): I[k,l] = n*(delta[k,l] + (C2*C2i)[k2,l2]*(C1*C1i)[k1,l1])
+  I_DD <- n_obs * (diag(q) + kronecker(C2 * C2i, C1 * C1i))
+
+  # Assemble full information matrix in parameter order [U upper tri, V upper tri, log W]
+  I_full <- rbind(
+    cbind(I_UU,    I_UV,    I_UD),
+    cbind(t(I_UV), I_VV,    I_VD),
+    cbind(t(I_UD), t(I_VD), I_DD)
   )
 
-  # Negative log-likelihood as a function of the free parameter vector
-  nll <- function(theta){
-    # Unpack U
-    U_cur <- diag(n_cols)
-    U_cur[upper.tri(U_cur)] <- theta[1:n_U]
-    U_cur[lower.tri(U_cur)] <- t(U_cur)[lower.tri(U_cur)]
-
-    # Unpack V
-    V_cur <- diag(n_rows)
-    V_cur[upper.tri(V_cur)] <- theta[(n_U + 1):(n_U + n_V)]
-    V_cur[lower.tri(V_cur)] <- t(V_cur)[lower.tri(V_cur)]
-
-    # Unpack W
-    W_cur <- exp(theta[(n_U + n_V + 1):(n_U + n_V + q)])
-
-    # Build Sigma and evaluate
-    R <- kronecker(U_cur, V_cur)
-    Sigma <- diag(W_cur) %*% R %*% diag(W_cur)
-
-    # Check positive definiteness
-    Sigma_chol <- tryCatch(chol(Sigma), error = function(e) NULL)
-    if(is.null(Sigma_chol)) return(1e20)
-
-    Sigma_c <- t(Sigma_chol) # lower triangular
-    -prof_log_lik(Sigma_c, E)
-  }
-
-  H <- numDeriv::hessian(nll, theta_hat)
-
-  # Invert to get asymptotic covariance (divide by n for the MLE)
-  vcov <- tryCatch(solve(H), error = function(e){
-    warning("Hessian is singular; standard errors may be unreliable.")
-    matrix(NA, nrow(H), ncol(H))
+  vcov <- tryCatch(solve(I_full), error = function(e) {
+    warning("Information matrix is singular; standard errors may be unreliable.")
+    matrix(NA_real_, nrow(I_full), ncol(I_full))
   })
 
   se <- sqrt(pmax(diag(vcov), 0))
 
   list(
-    se_U = se[1:n_U],
-    se_V = se[(n_U + 1):(n_U + n_V)],
-    se_logW = se[(n_U + n_V + 1):(n_U + n_V + q)],
-    vcov = vcov
+    se_U    = se[seq_len(n_U)],
+    se_V    = se[n_U + seq_len(n_V)],
+    se_logW = se[n_U + n_V + seq_len(q)],
+    vcov    = vcov
   )
 }
 
