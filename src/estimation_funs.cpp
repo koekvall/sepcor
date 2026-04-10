@@ -102,7 +102,7 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 		
 		M = arma::diagmat(arma::pow(W, -1.0)) * arma::kron(U_c, V_c); // use storage
 		ll_new = prof_log_lik_rcpp(M, E);
-		converged = ((ll_new -  ll_old)  < tol);
+		converged = ((ll_new - ll_old) < tol * std::abs(ll_old));
 		if(converged){
 			info = 0;
 		}
@@ -193,7 +193,7 @@ Rcpp::List sepcov_rcpp(arma::mat E, const int n_rows,
 
 		M = arma::kron(U_c, V_c);
 		ll_new = prof_log_lik_rcpp(M, E);
-		converged = ((ll_new -  ll_old)  < tol);
+		converged = ((ll_new - ll_old) < tol * std::abs(ll_old));
 		if(converged){
 			info = 0;
 		}

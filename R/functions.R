@@ -4,7 +4,7 @@
 #' @param E Matrix of dimension (n_rows n_cols) x n_obs, each column is a residual vector
 #' @param n_rows Number of "rows" of the inverse vectorized columns of E
 #' @param sepcov If TRUE, assume separable covariance matrix
-#' @param tol Algorithm terminates when an iteration increases the log-likelihood less than tol
+#' @param tol Algorithm terminates when the relative increase in log-likelihood is less than tol
 #' @param maxiter The maximum number of iterations the algorithm runs if not converging before
 #' @param verbose Print additional info about iterates if TRUE
 #' @param lambda Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(C1^{-1}) + tr(C2^{-1})]
