@@ -1,6 +1,14 @@
 # sepcor
 
-Software for maximum likelihood estimation of covariance matrices with separable correlation. The considered structure of the covariance matrix, Sigma, is: Sigma = W k(U, V) W, where W is a diagonal matrix with positive entries and k(U, V) means the Kronecker product of U and V.
+R package for likelihood-based inference with separable correlation matrices. The model is
+
+Sigma = D (C2 x C1) D,
+
+where C1 and C2 are correlation matrices, D is a diagonal matrix with positive entries, and x denotes the Kronecker product. The main functions are:
+
+- `sepcor`: fits the model by maximum likelihood via block-coordinate descent
+- `sepcor_se`: computes standard errors from the expected Fisher information
+
 ## Authors
 
 Karl Oskar Ekvall (k.o.ekvall at gmail dot com)
