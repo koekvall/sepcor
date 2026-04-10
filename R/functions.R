@@ -80,7 +80,7 @@ sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
 #' @return A list with components:
 #'   \item{se_C2}{Standard errors for the upper-triangular entries of C2.}
 #'   \item{se_C1}{Standard errors for the upper-triangular entries of C1.}
-#'   \item{se_logD}{Standard errors for log(D) (the log standard deviations).}
+#'   \item{se_D}{Standard errors for the diagonal entries of D.}
 #'   \item{vcov}{The full asymptotic covariance matrix of all parameters.}
 #'
 #' @export
@@ -124,16 +124,18 @@ sepcor_se <- function(fit, E, n_rows)
   # Block (C2, C1): I[j,k] = 2*n*C2i[aj,bj]*C1i[ak,bk]
   I_UV <- 2 * n_obs * outer(C2i_ut, C1i_ut)
 
-  # Block (C2, log D): I[j,m] = n*C2i[aj,bj] * (1[m2==aj] + 1[m2==bj])
-  I_UD <- n_obs * C2i_ut * (outer(aU, m2, "==") + outer(bU, m2, "=="))
+  di <- 1 / as.vector(fit$D)   # reciprocal diagonal entries of D
 
-  # Block (C1, log D): I[j,m] = n*C1i[aj,bj] * (1[m1==aj] + 1[m1==bj])
-  I_VD <- n_obs * C1i_ut * (outer(aV, m1, "==") + outer(bV, m1, "=="))
+  # Block (C2, D): I[j,m] = n*di[m]*C2i[aj,bj] * (1[m2==aj] + 1[m2==bj])
+  I_UD <- n_obs * outer(C2i_ut, di) * (outer(aU, m2, "==") + outer(bU, m2, "=="))
 
-  # Block (log D, log D): I[k,l] = n*(delta[k,l] + (C2*C2i)[k2,l2]*(C1*C1i)[k1,l1])
-  I_DD <- n_obs * (diag(q) + kronecker(C2 * C2i, C1 * C1i))
+  # Block (C1, D): I[j,m] = n*di[m]*C1i[aj,bj] * (1[m1==aj] + 1[m1==bj])
+  I_VD <- n_obs * outer(C1i_ut, di) * (outer(aV, m1, "==") + outer(bV, m1, "=="))
 
-  # Assemble full information matrix in parameter order [C2 upper tri, C1 upper tri, log D]
+  # Block (D, D): I[k,l] = n*(di[k]^2*delta[k,l] + di[k]*di[l]*(C2*C2i)[k2,l2]*(C1*C1i)[k1,l1])
+  I_DD <- n_obs * (diag(di^2) + outer(di, di) * kronecker(C2 * C2i, C1 * C1i))
+
+  # Assemble full information matrix in parameter order [C2 upper tri, C1 upper tri, D]
   I_full <- rbind(
     cbind(I_UU,    I_UV,    I_UD),
     cbind(t(I_UV), I_VV,    I_VD),
@@ -150,7 +152,7 @@ sepcor_se <- function(fit, E, n_rows)
   list(
     se_C2   = se[seq_len(n_U)],
     se_C1   = se[n_U + seq_len(n_V)],
-    se_logD = se[n_U + n_V + seq_len(q)],
+    se_D    = se[n_U + n_V + seq_len(q)],
     vcov    = vcov
   )
 }
