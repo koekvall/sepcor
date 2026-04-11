@@ -44,7 +44,7 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			// lambda*I contribution to S_n: W_c[j2] = sum_{j1} W[j1+j2*r]^2 * C1i[j1,j1]
 			arma::vec diag_C1i = chol_solve(V_c, arma::eye(n_rows, n_rows)).diag();
 			arma::mat W_sq = arma::reshape(arma::square(W), n_rows, n_cols);
-			U += lambda * n_obs * arma::diagmat(W_sq.t() * diag_C1i);
+			U += lambda * arma::diagmat(W_sq.t() * diag_C1i);
 		}
 		U *= (1.0 / (n_obs * n_rows));
 		// Rescale U to corr-mat and W accordingly
@@ -73,7 +73,7 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			// lambda*I contribution to S_n: W_r[j1] = sum_{j2} W[j1+j2*r]^2 * C2i[j2,j2]
 			arma::vec diag_C2i = chol_solve(U_c, arma::eye(n_cols, n_cols)).diag();
 			arma::mat W_sq = arma::reshape(arma::square(W), n_rows, n_cols);
-			V += lambda * n_obs * arma::diagmat(W_sq * diag_C2i);
+			V += lambda * arma::diagmat(W_sq * diag_C2i);
 		}
 		V *= (1.0 / (n_obs * n_cols));
 		// Rescale V to corr-mat and W accordingly
@@ -90,8 +90,9 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			break;
 		}
 
-		// Update precision parameters (S_pen = S + lambda*I replaces S_n)
-		arma::mat S_pen = S + lambda * arma::eye(n_rows * n_cols, n_rows * n_cols);
+		// Update precision parameters
+		// Penalty adds lambda/n to diagonal of S_n (equivalent to S_n + lambda/n * I)
+		arma::mat S_pen = S + (lambda / n_obs) * arma::eye(n_rows * n_cols, n_rows * n_cols);
 		M = S_pen % arma::kron(chol_solve(U_c, arma::eye(n_cols, n_cols)),
 			chol_solve(V_c, arma::eye(n_rows, n_rows)));
 		for (size_t ii = 0; ii < W.n_elem; ++ii)
