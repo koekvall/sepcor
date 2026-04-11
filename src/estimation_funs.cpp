@@ -32,8 +32,10 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 		bool converged;
 		double ll_new;
 
-		// Update U
+		// Compute scaled residuals once per iteration
 		E_tilde = arma::reshape(arma::diagmat(W) * E, n_rows, n_obs * n_cols);
+
+		// Update U
 		U.zeros();
 		for (size_t ii = 0; ii < n_obs; ++ii)
 		{
@@ -47,48 +49,54 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			U += lambda * arma::diagmat(W_sq.t() * diag_C1i);
 		}
 		U *= (1.0 / (n_obs * n_rows));
-		// Rescale U to corr-mat and W accordingly
-		U_c.col(0) = 1.0 / arma::sqrt(U.diag()); // Store precision param. updates
-		for (int ii = 0; ii < W.n_elem; ++ii)
-		{
-			W(ii) *= U_c(ii / n_rows, 0);
-		}
-		U = arma::diagmat(U_c.col(0)) * U * arma::diagmat(U_c.col(0));
-		success = arma::chol(U_c, U, "lower");
+		arma::mat U_c_unnorm; // Cholesky of unnormalized U, used for V update
+		success = arma::chol(U_c_unnorm, U, "lower");
 		if(!success){
 			Rcpp::warning("Iterate of U not PD.");
 			info = 2;
 			break;
 		}
 
-		// Update V
-		E_tilde = arma::reshape(arma::diagmat(W) * E, n_rows, n_obs * n_cols);
+		// Update V (same E_tilde, unnormalized U_c: equivalent to rescaling first)
 		V.zeros();
 		for (size_t ii = 0; ii < n_obs; ++ii)
 		{
 			V += E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1) *
-				chol_solve(U_c, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t());
+				chol_solve(U_c_unnorm, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t());
 		}
 		if(lambda > 0){
 			// lambda*I contribution to S_n: W_r[j1] = sum_{j2} W[j1+j2*r]^2 * C2i[j2,j2]
-			arma::vec diag_C2i = chol_solve(U_c, arma::eye(n_cols, n_cols)).diag();
+			arma::vec diag_C2i = chol_solve(U_c_unnorm, arma::eye(n_cols, n_cols)).diag();
 			arma::mat W_sq = arma::reshape(arma::square(W), n_rows, n_cols);
 			V += lambda * arma::diagmat(W_sq * diag_C2i);
 		}
 		V *= (1.0 / (n_obs * n_cols));
-		// Rescale V to corr-mat and W accordingly
-		V_c.col(0) = 1.0 / arma::sqrt(V.diag()); // Store precision param. updates
-		for (int ii = 0; ii < W.n_elem; ++ii)
-		{
-			W(ii) *= V_c(ii % n_rows , 0);
-		}
-		V = arma::diagmat(V_c.col(0)) * V * arma::diagmat(V_c.col(0));
-		success = arma::chol(V_c, V, "lower");
+		arma::mat V_c_unnorm;
+		success = arma::chol(V_c_unnorm, V, "lower");
 		if(!success){
 			Rcpp::warning("Iterate of V not PD.");
 			info = 3;
 			break;
 		}
+
+		// Rescale U and V to correlation matrices, update W accordingly.
+		// Cholesky of rescaled matrix follows by row-scaling: if U = L L^T then
+		// diag(s) U diag(s) = (diag(s) L)(diag(s) L)^T, so no new Cholesky needed.
+		arma::vec s_U = 1.0 / arma::sqrt(U.diag());
+		for (int ii = 0; ii < W.n_elem; ++ii)
+		{
+			W(ii) *= s_U(ii / n_rows);
+		}
+		U = arma::diagmat(s_U) * U * arma::diagmat(s_U);
+		U_c = arma::diagmat(s_U) * U_c_unnorm;
+
+		arma::vec s_V = 1.0 / arma::sqrt(V.diag());
+		for (int ii = 0; ii < W.n_elem; ++ii)
+		{
+			W(ii) *= s_V(ii % n_rows);
+		}
+		V = arma::diagmat(s_V) * V * arma::diagmat(s_V);
+		V_c = arma::diagmat(s_V) * V_c_unnorm;
 
 		// Update precision parameters
 		// Penalty adds lambda/n to diagonal of S_n (equivalent to S_n + lambda/n * I)
