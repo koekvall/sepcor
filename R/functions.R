@@ -7,8 +7,8 @@
 #' @param tol Algorithm terminates when the relative increase in log-likelihood is less than tol
 #' @param maxiter The maximum number of iterations the algorithm runs if not converging before
 #' @param verbose Print additional info about iterates if TRUE
-#' @param lambda Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(C1^{-1}) + tr(C2^{-1})]
-#'   to the negative log-likelihood, shrinking C1 and C2 toward the identity (independence).
+#' @param lambda Nuclear norm penalty parameter (>= 0). Subtracts (lambda/2)*tr(Sigma^{-1})
+#'   from the log-likelihood, shrinking C1 and C2 toward the identity (independence).
 #'   Only used when sepcov = FALSE. Default 0 gives the MLE.
 #' @param n_starts Number of random starting points. The first start uses the default
 #'   initialization (C1 = I, C2 = I). Additional starts use random correlation matrices
