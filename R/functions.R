@@ -175,18 +175,18 @@ prof_log_lik_sep <- function(C1, C2, D, E)
   prof_log_lik_sep_rcpp(E, C1, C2, as.vector(D))
 }
 
-prof_log_lik <- function(Sigma_c, E)
-#' Calculate (profile) log-likelihood for Sigma_c, i.e. the multivariate normal likelihood 
+#' Calculate (profile) log-likelihood for Sigma_c, i.e. the multivariate normal likelihood
 #' proportional to: -log(determinant(Sigma)) - trace{t(E) solve(Sigma) E},
 #'  where Sigma =  Sigma_c t(Sigma_c).
-#' 
+#'
 #' @param Sigma_c An rc x rc lower triangular Cholesky factor to evaluate the likelihood at
 #' @param E An rc x n_obs matrix of residual vectors, where n_obs is the number of such vectors
 #' @return The likelihood value evaluated at the arguments supplied, *including constants*
-#' 
+#'
 #' @export
 #' @useDynLib sepcor
 #' @importFrom Rcpp evalCpp
+prof_log_lik <- function(Sigma_c, E)
 {
   if(!(is.matrix(Sigma_c) && ncol(Sigma_c) == nrow(Sigma_c) && sum(Sigma_c[upper.tri(Sigma_c)]) == 0 &&
     sum(diag(Sigma_c) < 0)) == 0){stop("Sigma_c should be a lower triangular Cholesky root")}
