@@ -157,6 +157,24 @@ sepcor_se <- function(fit, E, n_rows)
   )
 }
 
+#' Log-likelihood for the separable correlation model using Kronecker structure
+#'
+#' Computes the multivariate normal log-likelihood for
+#' \eqn{\Sigma = D (C_2 \otimes C_1) D} without forming the full \eqn{q \times q}
+#' matrix. Costs \eqn{O(r^3 + c^3 + rcn)} rather than \eqn{O(q^3)}.
+#'
+#' @param C1 An \eqn{r \times r} positive definite correlation matrix.
+#' @param C2 A \eqn{c \times c} positive definite correlation matrix.
+#' @param D  A length-\eqn{rc} vector of positive diagonal entries.
+#' @param E  An \eqn{rc \times n} matrix of residuals.
+#' @return The log-likelihood value.
+#' @export
+prof_log_lik_sep <- function(C1, C2, D, E)
+{
+  stopifnot(is.matrix(C1), is.matrix(C2), is.numeric(D), is.matrix(E))
+  prof_log_lik_sep_rcpp(E, C1, C2, as.vector(D))
+}
+
 prof_log_lik <- function(Sigma_c, E)
 #' Calculate (profile) log-likelihood for Sigma_c, i.e. the multivariate normal likelihood 
 #' proportional to: -log(determinant(Sigma)) - trace{t(E) solve(Sigma) E},

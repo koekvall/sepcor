@@ -9,6 +9,10 @@ sepcov_rcpp <- function(E, n_rows, tol, maxiter, verbose) {
     .Call('_sepcor_sepcov_rcpp', PACKAGE = 'sepcor', E, n_rows, tol, maxiter, verbose)
 }
 
+prof_log_lik_sep_rcpp <- function(E, C1, C2, D) {
+    .Call('_sepcor_prof_log_lik_sep_rcpp', PACKAGE = 'sepcor', E, C1, C2, D)
+}
+
 prof_log_lik_rcpp <- function(Sigma_chol, E) {
     .Call('_sepcor_prof_log_lik_rcpp', PACKAGE = 'sepcor', Sigma_chol, E)
 }

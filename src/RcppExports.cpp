@@ -43,6 +43,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// prof_log_lik_sep_rcpp
+double prof_log_lik_sep_rcpp(const arma::mat& E, const arma::mat& C1, const arma::mat& C2, const arma::vec& D);
+RcppExport SEXP _sepcor_prof_log_lik_sep_rcpp(SEXP ESEXP, SEXP C1SEXP, SEXP C2SEXP, SEXP DSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type E(ESEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type C1(C1SEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type C2(C2SEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type D(DSEXP);
+    rcpp_result_gen = Rcpp::wrap(prof_log_lik_sep_rcpp(E, C1, C2, D));
+    return rcpp_result_gen;
+END_RCPP
+}
 // prof_log_lik_rcpp
 double prof_log_lik_rcpp(arma::mat& Sigma_chol, const arma::mat& E);
 RcppExport SEXP _sepcor_prof_log_lik_rcpp(SEXP Sigma_cholSEXP, SEXP ESEXP) {
@@ -86,6 +100,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_sepcor_sepcor_rcpp", (DL_FUNC) &_sepcor_sepcor_rcpp, 7},
     {"_sepcor_sepcov_rcpp", (DL_FUNC) &_sepcor_sepcov_rcpp, 5},
+    {"_sepcor_prof_log_lik_sep_rcpp", (DL_FUNC) &_sepcor_prof_log_lik_sep_rcpp, 4},
     {"_sepcor_prof_log_lik_rcpp", (DL_FUNC) &_sepcor_prof_log_lik_rcpp, 2},
     {"_sepcor_ll_grad_UV", (DL_FUNC) &_sepcor_ll_grad_UV, 3},
     {"_sepcor_ll_grad_W_inv", (DL_FUNC) &_sepcor_ll_grad_W_inv, 4},

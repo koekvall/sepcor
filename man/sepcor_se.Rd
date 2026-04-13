@@ -3,7 +3,7 @@
 \name{sepcor_se}
 \alias{sepcor_se}
 \title{Compute standard errors for a fitted separable correlation model via
-the observed Fisher information (numerical Hessian of the log-likelihood).}
+the expected Fisher information.}
 \usage{
 sepcor_se(fit, E, n_rows)
 }
@@ -16,12 +16,12 @@ sepcor_se(fit, E, n_rows)
 }
 \value{
 A list with components:
-  \item{se_U}{Standard errors for the upper-triangular entries of U (row-major).}
-  \item{se_V}{Standard errors for the upper-triangular entries of V (row-major).}
-  \item{se_W}{Standard errors for the diagonal entries of W (on the log scale).}
+  \item{se_C2}{Standard errors for the upper-triangular entries of C2.}
+  \item{se_C1}{Standard errors for the upper-triangular entries of C1.}
+  \item{se_D}{Standard errors for the diagonal entries of D.}
   \item{vcov}{The full asymptotic covariance matrix of all parameters.}
 }
 \description{
 Compute standard errors for a fitted separable correlation model via
-the observed Fisher information (numerical Hessian of the log-likelihood).
+the expected Fisher information.
 }

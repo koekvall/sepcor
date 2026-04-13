@@ -2,8 +2,8 @@
 % Please edit documentation in R/functions.R
 \name{sepcor}
 \alias{sepcor}
-\title{Estimate the covariance matrix Sigma = W k(U, V) W using the multivariate
-normal likelihood, where k(U, V) means the Kronecker product of U and V.}
+\title{Estimate the covariance matrix Sigma = D (C2 \%x\% C1) D using the multivariate
+normal likelihood, where \%x\% denotes the Kronecker product.}
 \usage{
 sepcor(
   E,
@@ -23,18 +23,18 @@ sepcor(
 
 \item{sepcov}{If TRUE, assume separable covariance matrix}
 
-\item{tol}{Algorithm terminates when an iteration increases the log-likelihood less than tol}
+\item{tol}{Algorithm terminates when the relative increase in log-likelihood is less than tol}
 
 \item{maxiter}{The maximum number of iterations the algorithm runs if not converging before}
 
 \item{verbose}{Print additional info about iterates if TRUE}
 
-\item{lambda}{Ridge penalty parameter (>= 0). Adds (lambda/2)[tr(U^{-1}) + tr(V^{-1})]
-to the negative log-likelihood, shrinking U and V toward the identity (independence).
+\item{lambda}{Nuclear norm penalty parameter (>= 0). Subtracts (lambda/2)*tr(Sigma^{-1})
+from the log-likelihood, shrinking C1 and C2 toward the identity (independence).
 Only used when sepcov = FALSE. Default 0 gives the MLE.}
 
 \item{n_starts}{Number of random starting points. The first start uses the default
-initialization (U = I, V = I). Additional starts use random correlation matrices
+initialization (C1 = I, C2 = I). Additional starts use random correlation matrices
 and perturbed standard deviations. Only used when sepcov = FALSE. Default 1.}
 }
 \value{
@@ -42,6 +42,6 @@ Final iterates, log-likelihood evaluated at these iterates, iterations,
 and convergence info
 }
 \description{
-Estimate the covariance matrix Sigma = W k(U, V) W using the multivariate
-normal likelihood, where k(U, V) means the Kronecker product of U and V.
+Estimate the covariance matrix Sigma = D (C2 \%x\% C1) D using the multivariate
+normal likelihood, where \%x\% denotes the Kronecker product.
 }
