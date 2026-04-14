@@ -50,7 +50,7 @@ se$se_D   # SEs for diagonal entries of D
 ## Reference
 
 Ekvall, K. O. (2025+). Likelihood-based inference with separable correlation
-matrices. *Stat*, to appear.
+matrices.
 
 ## Author
 
