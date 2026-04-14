@@ -20,7 +20,7 @@
 #' @useDynLib sepcor
 #' @importFrom Rcpp evalCpp
 #' @importFrom stats rWishart
-sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-16, maxiter = 1000,
+sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-8, maxiter = 1000,
   verbose = FALSE, lambda = 0, n_starts = 1L)
 {
   if(!is.matrix(E)){stop("E needs to be a rc x n matrix of residuals")}

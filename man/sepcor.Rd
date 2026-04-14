@@ -9,7 +9,7 @@ sepcor(
   E,
   n_rows,
   sepcov = FALSE,
-  tol = 1e-16,
+  tol = 1e-8,
   maxiter = 1000,
   verbose = FALSE,
   lambda = 0,
