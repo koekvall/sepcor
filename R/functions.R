@@ -54,15 +54,14 @@ sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-8, maxiter = 1000,
   S <- tcrossprod(E) / n_obs
   q <- nrow(E)
 
-  # First start: default initialization
-  best_fit <- sepcor_rcpp(E, diag(S), n_rows, tol, maxiter, verbose, lambda)
+  # First start: default initialization D^(0) = I (identity), matching Algorithm 1
+  best_fit <- sepcor_rcpp(E, rep(1, q), n_rows, tol, maxiter, verbose, lambda)
 
-  # Additional random starts
+  # Additional random starts: perturb the sample standard deviations
   if(n_starts > 1L){
     for(s in 2:n_starts){
-      # Random W: perturb sample standard deviations
       W_init <- sqrt(diag(S)) * exp(rnorm(q, 0, 0.5))
-      fit_s <- sepcor_rcpp(E, W_init^2, n_rows, tol, maxiter, FALSE, lambda)
+      fit_s <- sepcor_rcpp(E, W_init, n_rows, tol, maxiter, FALSE, lambda)
       if(fit_s$ll > best_fit$ll){
         best_fit <- fit_s
       }
