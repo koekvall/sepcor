@@ -35,12 +35,14 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 		// Compute scaled residuals once per iteration
 		E_tilde = arma::reshape(arma::diagmat(W) * E, n_rows, n_obs * n_cols);
 
-		// Update U
+		// Update U. Hoist the triangular solve out of the loop: solve
+		// V^{-1} E_tilde once (r x n_obs*n_cols) rather than once per observation.
+		arma::mat X_U = chol_solve(V_c, E_tilde);
 		U.zeros();
 		for (size_t ii = 0; ii < n_obs; ++ii)
 		{
 			U += E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t() *
-			chol_solve(V_c, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1));
+			X_U.cols(ii * n_cols, (ii + 1) * n_cols - 1);
 		}
 		if(lambda > 0){
 			// lambda*I contribution to S_n: W_c[j2] = sum_{j1} W[j1+j2*r]^2 * C1i[j1,j1]
@@ -57,12 +59,19 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 			break;
 		}
 
-		// Update V (same E_tilde, unnormalized U_c: equivalent to rescaling first)
+		// Update V (same E_tilde, unnormalized U_c: equivalent to rescaling first).
+		// Hoist the solve: build the block-transposed residuals once, then solve
+		// U^{-1} against the whole c x (n_obs*n_rows) matrix in a single call.
+		arma::mat Gt(n_cols, n_obs * n_rows);
+		for (size_t ii = 0; ii < n_obs; ++ii)
+			Gt.cols(ii * n_rows, (ii + 1) * n_rows - 1) =
+				E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t();
+		arma::mat X_V = chol_solve(U_c_unnorm, Gt);
 		V.zeros();
 		for (size_t ii = 0; ii < n_obs; ++ii)
 		{
 			V += E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1) *
-				chol_solve(U_c_unnorm, E_tilde.cols(ii * n_cols, (ii + 1) * n_cols - 1).t());
+				X_V.cols(ii * n_rows, (ii + 1) * n_rows - 1);
 		}
 		if(lambda > 0){
 			// lambda*I contribution to S_n: W_r[j1] = sum_{j2} W[j1+j2*r]^2 * C2i[j2,j2]
@@ -120,8 +129,10 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 		  Rcpp::checkUserInterrupt();
 		}
 		
-		M = arma::diagmat(arma::pow(W, -1.0)) * arma::kron(U_c, V_c);
-		ll_new = prof_log_lik_rcpp(M, E);
+		// Evaluate the log-likelihood using the Kronecker structure,
+		// O(r^3 + c^3 + rcn), rather than forming the q x q Cholesky and
+		// solving a dense q x q system, O(r^2 c^2 n). U = C2, V = C1, 1/W = D.
+		ll_new = prof_log_lik_sep_rcpp(E, V, U, arma::pow(W, -1.0));
 		converged = ((ll_new - ll_old) < tol * std::abs(ll_old));
 		if(converged){
 			info = 0;
