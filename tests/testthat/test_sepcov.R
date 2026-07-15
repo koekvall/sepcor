@@ -1,3 +1,4 @@
+set.seed(1)
 n_obs <- 1e5
 n_rows <- 3
 n_cols <- 3
@@ -17,7 +18,7 @@ testthat::test_that("algorithm converged", {
   testthat::expect_equal(fit$info, 0)
 })
 
-Sig_hat <- kronecker(fit$U, fit$V)
+Sig_hat <- kronecker(fit$C2, fit$C1)
 
 testthat::test_that("estimates seem consistent", {
   testthat::expect_lt(max(abs(Sig0 - Sig_hat)), 0.01)

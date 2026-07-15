@@ -1,3 +1,4 @@
+set.seed(1)
 n_obs <- 1e5
 n_rows <- 3
 n_cols <- 3
@@ -18,7 +19,7 @@ testthat::test_that("algorithm converged", {
   testthat::expect_equal(fit$info, 0)
 })
 
-Sig_hat <- sweep(sweep(kronecker(fit$U, fit$V), 1, fit$W, "*"), 2, fit$W, "*")
+Sig_hat <- sweep(sweep(kronecker(fit$C2, fit$C1), 1, fit$D, "*"), 2, fit$D, "*")
 
 
 testthat::test_that("estimates seem consistent", {
