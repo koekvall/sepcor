@@ -5,16 +5,20 @@
 //[[Rcpp::export]]
 Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
  const double tol, const int maxiter, const bool verbose,
- const double lambda)
+ const double lambda, const arma::mat C1_init)
 {
 	// \Sigma = W (U \otimes V) W
 	const unsigned int n_obs = E.n_cols;
 	const unsigned int n_cols = E.n_rows / n_rows;
 
+	// U = C2 is updated first, so its starting value is immaterial; V = C1 is
+	// updated second, so C1_init is the correlation matrix that shapes the
+	// trajectory. Random C1_init is used for the multi-start diagnostic.
 	arma::mat U = arma::eye(n_cols, n_cols);
 	arma::mat U_c = U; // Cholesky factor storage
-	arma::mat V = arma::eye(n_rows, n_rows);
-	arma::mat V_c = V; // Cholesky factor storage
+	arma::mat V = C1_init;
+	arma::mat V_c;
+	if (!arma::chol(V_c, V, "lower")) Rcpp::stop("C1_init must be positive definite.");
 
 	const arma::mat S = E * E.t() * (1.0 / n_obs);
 	arma::mat M(n_rows * n_cols, n_rows * n_cols); // Re-usable storage

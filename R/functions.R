@@ -54,14 +54,19 @@ sepcor <- function(E, n_rows, sepcov = FALSE, tol = 1e-8, maxiter = 1000,
   S <- tcrossprod(E) / n_obs
   q <- nrow(E)
 
-  # First start: default initialization D^(0) = I (identity), matching Algorithm 1
-  best_fit <- sepcor_rcpp(E, rep(1, q), n_rows, tol, maxiter, verbose, lambda)
+  # First start: default initialization C1 = C2 = I, D = I, matching Algorithm 1
+  best_fit <- sepcor_rcpp(E, rep(1, q), n_rows, tol, maxiter, verbose, lambda,
+                          diag(n_rows))
 
-  # Additional random starts: perturb the sample standard deviations
+  # Additional random starts: perturb both the standard deviations and the
+  # correlation matrix C1 (the one not updated first; C2 is updated first, so
+  # its starting value is immaterial). Together these cover the whole space of
+  # starting values that affects the trajectory.
   if(n_starts > 1L){
     for(s in 2:n_starts){
       W_init <- sqrt(diag(S)) * exp(rnorm(q, 0, 0.5))
-      fit_s <- sepcor_rcpp(E, W_init, n_rows, tol, maxiter, FALSE, lambda)
+      fit_s <- sepcor_rcpp(E, W_init, n_rows, tol, maxiter, FALSE, lambda,
+                           rand_corr(n_rows))
       if(fit_s$ll > best_fit$ll){
         best_fit <- fit_s
       }
