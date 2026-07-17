@@ -112,7 +112,8 @@ Rcpp::List sepcor_rcpp(const arma::mat E, arma::vec W, const int n_rows,
 		V_c = arma::diagmat(s_V) * V_c_unnorm;
 
 		// Update precision parameters
-		// Penalty adds lambda/n to diagonal of S_n (equivalent to S_n + lambda/n * I)
+		// S is the averaged residual matrix S_n / n, so adding lambda/n here
+		// equals adding lambda to the diagonal of the summed S_n in the paper
 		arma::mat S_pen = S + (lambda / n_obs) * arma::eye(n_rows * n_cols, n_rows * n_cols);
 		M = S_pen % arma::kron(chol_solve(U_c, arma::eye(n_cols, n_cols)),
 			chol_solve(V_c, arma::eye(n_rows, n_rows)));
